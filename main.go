@@ -108,12 +108,12 @@ func (cnf *config) processMsg(m hookMsg) error {
 		}
 		switch m.Description {
 		case "act-createCard":
-			err = cnf.setCheckListItem(*parent, "SubTasks", card.Title, false)
+			err = cnf.setCheckListItem(*parent, card.Title, "Pronto", false)
 			if err != nil {
 				return fmt.Errorf("error in setCheckListItem: %v", err)
 			}
 		case "act-archivedCard":
-			err = cnf.setCheckListItem(*parent, "SubTasks", card.Title, true)
+			err = cnf.setCheckListItem(*parent, card.Title, "Pronto", true)
 			if err != nil {
 				return fmt.Errorf("error in setCheckListItem: %v", err)
 			}
