@@ -10,6 +10,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/setecrs/wekan-hooks/hooks/fields"
@@ -46,6 +47,7 @@ type hookMsg struct {
 type config struct {
 	MongoClient *mongo.Client
 	Hooks       []hooks.Hooker
+	Timeout     time.Duration
 }
 
 func main() {
@@ -62,6 +64,14 @@ func main() {
 	if !ok {
 		panic("MONGO_URL not set. Example: mongodb://localhost:27017")
 	}
+	t, ok := os.LookupEnv("TIMEOUT")
+	if !ok {
+		t = "20"
+	}
+	TIMEOUT, err := strconv.Atoi(t)
+	if err != nil {
+		log.Fatalf("invalid TIMEOUT: %v, %v", t, err)
+	}
 
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(MONGO_URL))
@@ -77,6 +87,7 @@ func main() {
 			fields.IPL,
 			fields.Path,
 		},
+		Timeout: time.Duration(TIMEOUT) * time.Second,
 	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -120,7 +131,7 @@ func (cnf *config) processMsg(m hookMsg) error {
 
 func (cnf *config) findChecklist(cardID, checklistTitle string) (id string, ok bool, err error) {
 	coll := cnf.MongoClient.Database("wekan").Collection("checklists")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), cnf.Timeout)
 	defer cancel()
 	result := coll.FindOne(ctx, bson.M{"cardId": cardID, "title": checklistTitle})
 	idStruct := struct {
@@ -138,7 +149,7 @@ func (cnf *config) findChecklist(cardID, checklistTitle string) (id string, ok b
 
 func (cnf *config) insertChecklist(cardID, checklistTitle string) (id string, err error) {
 	coll := cnf.MongoClient.Database("wekan").Collection("checklists")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), cnf.Timeout)
 	defer cancel()
 	id = uuid()
 	_, err = coll.InsertOne(ctx, bson.M{"_id": id, "cardId": cardID, "title": checklistTitle})
@@ -152,7 +163,7 @@ func (cnf *config) insertChecklist(cardID, checklistTitle string) (id string, er
 
 func (cnf *config) findChecklistItem(cardID, checklistID, itemTitle string) (id string, ok bool, err error) {
 	coll := cnf.MongoClient.Database("wekan").Collection("checklistItems")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), cnf.Timeout)
 	defer cancel()
 	result := coll.FindOne(ctx, bson.M{"cardId": cardID, "checklistId": checklistID, "title": itemTitle})
 	idStruct := struct {
@@ -170,7 +181,7 @@ func (cnf *config) findChecklistItem(cardID, checklistID, itemTitle string) (id 
 
 func (cnf *config) insertChecklistItem(cardID, checklistID, itemTitle string, isFinished bool) (id string, err error) {
 	coll := cnf.MongoClient.Database("wekan").Collection("checklistItems")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), cnf.Timeout)
 	defer cancel()
 	id = uuid()
 	_, err = coll.InsertOne(ctx, bson.M{"_id": id, "cardId": cardID, "checklistId": checklistID, "title": itemTitle, "isFinished": isFinished})
@@ -184,7 +195,7 @@ func (cnf *config) insertChecklistItem(cardID, checklistID, itemTitle string, is
 
 func (cnf *config) updateChecklistItem(id string, isFinished bool) error {
 	coll := cnf.MongoClient.Database("wekan").Collection("checklistItems")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), cnf.Timeout)
 	defer cancel()
 	_, err := coll.UpdateOne(ctx, bson.M{"_id": id}, bson.M{"$set": bson.M{"isFinished": isFinished}})
 	if err != nil {
@@ -220,7 +231,7 @@ func (cnf config) SetCheckListItem(cardID string, checklistTitle string, itemTit
 
 func (cnf config) FindCard(cardID string) (hooks.CardMsg, error) {
 	coll := cnf.MongoClient.Database("wekan").Collection("cards")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), cnf.Timeout)
 	defer cancel()
 	result := coll.FindOne(ctx, bson.M{"_id": cardID})
 	card := hooks.CardMsg{}
@@ -230,7 +241,7 @@ func (cnf config) FindCard(cardID string) (hooks.CardMsg, error) {
 
 func (cnf config) FindBoard(title string) (id string, ok bool, err error) {
 	coll := cnf.MongoClient.Database("wekan").Collection("boards")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), cnf.Timeout)
 	defer cancel()
 	result := coll.FindOne(ctx, bson.M{"title": title})
 	idStruct := struct {
@@ -248,7 +259,7 @@ func (cnf config) FindBoard(title string) (id string, ok bool, err error) {
 
 func (cnf config) FindCustomField(name, boardID string) (id string, ok bool, err error) {
 	coll := cnf.MongoClient.Database("wekan").Collection("customFields")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), cnf.Timeout)
 	defer cancel()
 	result := coll.FindOne(ctx, bson.M{"name": name, "boardIds": boardID})
 	idStruct := struct {
@@ -271,7 +282,7 @@ func (cnf config) SetCustomField(cardID, fieldID, value string) error {
 	}
 
 	coll := cnf.MongoClient.Database("wekan").Collection("cards")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), cnf.Timeout)
 	defer cancel()
 
 	for i, k := range card.CustomFields {
