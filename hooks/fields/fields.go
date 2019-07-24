@@ -31,7 +31,7 @@ func IPL(act string, cardId string, ops hooks.Operations) error {
 	}
 	err := checkIDs(ops)
 	if err != nil {
-		return err
+		return errors.Wrap(err, fmt.Sprintf("IPL: error checking IDs of custom fields"))
 	}
 	card, err := ops.FindCard(cardId)
 	if err != nil {
@@ -79,7 +79,7 @@ func Path(act string, cardId string, ops hooks.Operations) error {
 	}
 	err := checkIDs(ops)
 	if err != nil {
-		return err
+		return errors.Wrap(err, fmt.Sprintf("Path: error checking IDs of custom fields"))
 	}
 	card, err := ops.FindCard(cardId)
 	if err != nil {
@@ -166,7 +166,7 @@ func checkIDs(ops hooks.Operations) error {
 	if BoardMateriaisID == "" {
 		id, ok, err := ops.FindBoard("Materiais")
 		if err != nil {
-			return err
+			return errors.Wrap(err, fmt.Sprintf("checkIDs: error searching board"))
 		}
 		if !ok {
 			return fmt.Errorf("Board Materiais not found.")
@@ -176,49 +176,49 @@ func checkIDs(ops hooks.Operations) error {
 	if customFieldsIDs.ipl == "" {
 		id, err := getID(ops, "ipl")
 		if err != nil {
-			return err
+			return errors.Wrap(err, fmt.Sprintf("checkIDs: error getting ID"))
 		}
 		customFieldsIDs.ipl = id
 	}
 	if customFieldsIDs.registro == "" {
 		id, err := getID(ops, "registro")
 		if err != nil {
-			return err
+			return errors.Wrap(err, fmt.Sprintf("checkIDs: error getting ID"))
 		}
 		customFieldsIDs.registro = id
 	}
 	if customFieldsIDs.solicitacao == "" {
 		id, err := getID(ops, "solicitacao")
 		if err != nil {
-			return err
+			return errors.Wrap(err, fmt.Sprintf("checkIDs: error getting ID"))
 		}
 		customFieldsIDs.solicitacao = id
 	}
 	if customFieldsIDs.auto == "" {
 		id, err := getID(ops, "auto")
 		if err != nil {
-			return err
+			return errors.Wrap(err, fmt.Sprintf("checkIDs: error getting ID"))
 		}
 		customFieldsIDs.auto = id
 	}
 	if customFieldsIDs.item == "" {
 		id, err := getID(ops, "item")
 		if err != nil {
-			return err
+			return errors.Wrap(err, fmt.Sprintf("checkIDs: error getting ID"))
 		}
 		customFieldsIDs.item = id
 	}
 	if customFieldsIDs.erro == "" {
 		id, err := getID(ops, "erro")
 		if err != nil {
-			return err
+			return errors.Wrap(err, fmt.Sprintf("checkIDs: error getting ID"))
 		}
 		customFieldsIDs.erro = id
 	}
 	if customFieldsIDs.path == "" {
 		id, err := getID(ops, "path")
 		if err != nil {
-			return err
+			return errors.Wrap(err, fmt.Sprintf("checkIDs: error getting ID"))
 		}
 		customFieldsIDs.path = id
 	}
@@ -228,7 +228,7 @@ func checkIDs(ops hooks.Operations) error {
 func getID(ops hooks.Operations, title string) (string, error) {
 	id, ok, err := ops.FindCustomField(title, BoardMateriaisID)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, fmt.Sprintf("getID: error searching for '%s'", title))
 	}
 	if !ok {
 		return "", fmt.Errorf("custom field not found: %s", title)
