@@ -1,4 +1,4 @@
-package path
+package fields
 
 import (
 	"bytes"
@@ -22,7 +22,55 @@ type CustomFieldsIDs struct {
 var BoardMateriaisID string
 var customFieldsIDs CustomFieldsIDs
 
-func Fill(act string, cardId string, ops hooks.Operations) error {
+func IPL(act string, cardId string, ops hooks.Operations) error {
+	if act != hooks.ActMoveCard {
+		return nil
+	}
+	err := checkIDs(ops)
+	if err != nil {
+		return err
+	}
+	card, err := ops.FindCard(cardId)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("could not find card: %s", cardId))
+	}
+	if card.BoardID != BoardMateriaisID {
+		return nil
+	}
+	for _, cf := range card.CustomFields {
+		if cf.ID == customFieldsIDs.ipl {
+			if cf.Value != nil {
+				if fmt.Sprintf("%v", cf.Value) != "" {
+					// ipl already filled
+					return nil
+				}
+			}
+		}
+	}
+	if card.ParentID == "" {
+		// Material has no parent
+		return nil
+	}
+	reg, err := ops.FindCard(card.ParentID)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("could not find parent card: %s", card.ParentID))
+	}
+	if reg.ParentID == "" {
+		// Material has no grand parent
+		return nil
+	}
+	ipl, err := ops.FindCard(reg.ParentID)
+	if err != nil {
+		return errors.Wrap(err, fmt.Sprintf("could not find parent card: %s", card.ParentID))
+	}
+	err = ops.SetCustomField(cardId, customFieldsIDs.ipl, ipl.Title)
+	if err != nil {
+		return errors.Wrap(err, "could not update custom field ipl")
+	}
+	return nil
+}
+
+func Path(act string, cardId string, ops hooks.Operations) error {
 	if act != hooks.ActMoveCard {
 		return nil
 	}
