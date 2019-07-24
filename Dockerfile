@@ -1,5 +1,5 @@
 FROM golang:alpine as builder
-WORKDIR /go/src/app
+WORKDIR /go/src/github.com/setecrs/wekan-hooks
 COPY . .
 RUN CGO_ENABLED=0 go build -o /go/bin/app .
 FROM scratch

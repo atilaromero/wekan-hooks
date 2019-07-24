@@ -12,6 +12,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/setecrs/wekan-hooks/hooks/path"
+
 	"github.com/pkg/errors"
 
 	"github.com/setecrs/wekan-hooks/hooks"
@@ -72,6 +74,7 @@ func main() {
 		Hooks: []hooks.Hooker{
 			child.Creation,
 			child.Archive,
+			path.Fill,
 		},
 	}
 
