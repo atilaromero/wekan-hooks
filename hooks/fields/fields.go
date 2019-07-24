@@ -3,6 +3,9 @@ package fields
 import (
 	"bytes"
 	"fmt"
+	"log"
+	"regexp"
+	"strings"
 
 	"github.com/pkg/errors"
 
@@ -117,32 +120,46 @@ func buildPath(card hooks.CardMsg) (string, error) {
 	var b bytes.Buffer
 	b.WriteString("/operacoes/")
 	if s, ok := idValue[customFieldsIDs.ipl]; ok {
+		s = normalizeString(s)
 		b.WriteString(s)
 		b.WriteString("/")
 	} else if s, ok := idValue[customFieldsIDs.registro]; ok {
+		s = normalizeString(s)
 		b.WriteString(s)
 		b.WriteString("/")
 	} else {
 		return "", fmt.Errorf("card %s does not have ipl or registro in custom fields", card.ID)
 	}
 	if s, ok := idValue[customFieldsIDs.auto]; ok {
+		s = normalizeString(s)
 		b.WriteString("auto_")
 		b.WriteString(s)
 		b.WriteString("/")
 	}
 	if s, ok := idValue[customFieldsIDs.item]; ok {
+		s = normalizeString(s)
 		b.WriteString("item")
 		b.WriteString(s)
 		b.WriteString("_")
-		b.WriteString(card.Title)
+		b.WriteString(normalizeString(card.Title))
 		b.WriteString("/")
 		b.WriteString("item")
 		b.WriteString(s)
 		b.WriteString("_")
 	}
-	b.WriteString(card.Title)
+	b.WriteString(normalizeString(card.Title))
 	b.WriteString(".dd")
 	return b.String(), nil
+}
+
+func normalizeString(s string) string {
+	s = strings.Split(s, "/")[0]
+	reg, err := regexp.Compile("[^a-zA-Z0-9_-]+")
+	if err != nil {
+		log.Fatal(err)
+	}
+	s = reg.ReplaceAllString(s, "")
+	return s
 }
 
 func checkIDs(ops hooks.Operations) error {
