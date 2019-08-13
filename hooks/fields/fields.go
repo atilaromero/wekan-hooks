@@ -132,7 +132,7 @@ func buildPath(card hooks.CardMsg) (string, error) {
 	}
 	if s, ok := idValue[customFieldsIDs.auto]; ok {
 		s = normalizeString(s)
-		b.WriteString("auto_")
+		b.WriteString("auto_apreensao_")
 		b.WriteString(s)
 		b.WriteString("/")
 	}
